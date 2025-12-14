@@ -47,7 +47,7 @@ jobs:
     - name: Build MagiskBoot for Windows
       run: |
         source $HOME/.cargo/env
-        python3 build.py native --targets magiskboot -r
+        python3 ru.py native --targets magiskboot -r
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
