@@ -1,59 +1,49 @@
-name: Build MagiskBoot Windows
+name: Build MagiskBoot for Windows
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   build-windows:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # Step 1: Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      # Step 2: Set up Python (for build.py)
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential curl zip unzip git mingw-w64
+      # Step 3: Install Rust nightly
+      - name: Install Rust nightly
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          setx PATH "%USERPROFILE%\.cargo\bin;%PATH%"
+          rustup install nightly
+          rustup default nightly
 
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source $HOME/.cargo/env
-        rustup install nightly
-        rustup default nightly
+      # Step 4: Verify Rust
+      - name: Verify Rust
+        run: |
+          rustc --version
+          cargo --version
 
-    - name: Add Windows targets
-      run: |
-        source $HOME/.cargo/env
-        rustup target add x86_64-pc-windows-gnu
-        rustup target add i686-pc-windows-gnu
+      # Step 5: Run your build.py script
+      - name: Build MagiskBoot
+        run: python ru.py native --targets magiskboot -r
 
-    - name: Set environment variables for mingw
-      run: |
-        export CC_i686_pc_windows_gnu=i686-w64-mingw32-gcc
-        export CXX_i686_pc_windows_gnu=i686-w64-mingw32-g++
-        export CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc
-        export CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++
-
-    - name: Build MagiskBoot for Windows
-      run: |
-        source $HOME/.cargo/env
-        python3 ru.py native --targets magiskboot -r
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: magiskboot-windows
-        path: |
-          native/out/i686/libmagiskboot-rs.a
-          native/out/x86_64/libmagiskboot-rs.a
+      # Step 6: Upload binaries as artifact
+      - name: Upload built binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: magiskboot-windows
+          path: |
+            native/out/magiskboot/*.exe
