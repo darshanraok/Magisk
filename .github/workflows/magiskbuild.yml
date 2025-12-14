@@ -29,7 +29,8 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         source $HOME/.cargo/env
-        rustup update stable
+        rustup install nightly
+        rustup default nightly
 
     - name: Add Windows targets
       run: |
